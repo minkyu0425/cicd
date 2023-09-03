@@ -1,9 +1,6 @@
-FROM ubuntu:14.04
+FROM nginx
 
-RUN apt-get update
-RUN apt-get install -y nginx
-
-WORKDIR /etc/nginx
+COPY index.html /usr/share/nginx/html/
 
 CMD ["nginx", -"g", "daemon off;"]
 
