@@ -1,0 +1,50 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    
+jobs:
+  build_and_push:
+    permissions:
+      id-token: write
+      contents: read
+  
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout source code
+      uses: 'actions/checkout@v3'
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v1'
+      with:
+      #variable
+        token_format: 'access_token'
+        workload_identity_provider: projects/461568029406/locations/global/workloadIdentityPools/github-cicd-pool/providers/cicd-provider
+        service_account: 'wif-test@test-project-11542.iam.gserviceaccount.com'
+        audience: 'https://github.com/minkyu0425/cicd'
+      
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1.1.1
+
+    - name: Use gcloud CLI
+      run: gcloud info
+
+    - name: Docker configuration
+      run: |
+        echo "${{ steps.auth.outputs.access_token }}" | docker login -u oauth2accesstoken --password-stdin "https://asia-northeast3-docker.pkg.dev"
+        
+    - name: Build the Docker image
+      run: docker build -t asia-northeast3-docker.pkg.dev/test-project-11542/cicd/dockerfile:v1 .
+
+    - name: auth repository
+      run: gcloud auth configure-docker "asia-northeast3-docker.pkg.dev/test-project-11542/cicd"
+
+    - name: image exists check
+      run: docker images
+      
+    - name: Upload Docker image
+      run: docker push "asia-northeast3-docker.pkg.dev/test-project-11542/cicd/dockerfile:v1"
